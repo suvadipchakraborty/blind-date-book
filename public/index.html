@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Blind Date with a Book — A Serendipity Engine for Readers</title>
+<meta name="description" content="Stop choosing books with your eyes. Pick a mood, an era, a genre — and let a stranger of a story find you. No covers, no algorithms, just the thrill of not knowing.">
+
+<!-- Theme / PWA -->
+<meta name="theme-color" content="#241E2C">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Blind Date">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="assets/icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="assets/icon-512.png">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Blind Date with a Book">
+<meta property="og:description" content="Pick a mood, an era, a genre — and let a stranger of a story find you. No covers, no algorithms, just serendipity.">
+<meta property="og:url" content="https://blind-date-book.suvadipchakraborty.workers.dev/">
+<meta property="og:image" content="https://blind-date-book.suvadipchakraborty.workers.dev/assets/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:site_name" content="Blind Date with a Book">
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Blind Date with a Book">
+<meta name="twitter:description" content="No covers. No algorithms. Just the thrill of not knowing what you'll read next.">
+<meta name="twitter:image" content="https://blind-date-book.suvadipchakraborty.workers.dev/assets/og-image.png">
+
+<link rel="canonical" href="https://blind-date-book.suvadipchakraborty.workers.dev/">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Karla:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="paper-overlay" aria-hidden="true"></div>
+
+<div class="app-shell">
+
+  <header class="app-header">
+    <div class="wordmark">
+      <span class="wordmark-icon">✦</span>
+      <span class="wordmark-text">Blind Date <em>with a Book</em></span>
+    </div>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button class="tab-btn is-active" id="tab-home" role="tab" aria-selected="true" aria-controls="panel-home">Home</button>
+      <button class="tab-btn" id="tab-pile" role="tab" aria-selected="false" aria-controls="panel-pile">TBR &amp; About</button>
+    </nav>
+  </header>
+
+  <main class="app-main">
+
+    <!-- HOME PANEL -->
+    <section id="panel-home" class="panel is-active" role="tabpanel" aria-labelledby="tab-home">
+
+      <div id="picker-stage" class="stage">
+        <p class="stage-intro">You won't see a cover. You won't see a title. Tell us what kind of night you're in the mood for, and we'll set you up.</p>
+
+        <div class="field-group">
+          <h2 class="field-label">Set the mood</h2>
+          <div class="chip-row" id="mood-chips" data-group="mood"></div>
+        </div>
+
+        <div class="field-group">
+          <h2 class="field-label">Pick an era <span class="field-hint">(optional)</span></h2>
+          <div class="chip-row" id="decade-chips" data-group="decade"></div>
+        </div>
+
+        <div class="field-group">
+          <h2 class="field-label">Nudge the genre <span class="field-hint">(optional)</span></h2>
+          <div class="chip-row" id="genre-chips" data-group="genre"></div>
+        </div>
+
+        <button id="find-date-btn" class="btn btn-primary btn-block" type="button">
+          Find my blind date
+        </button>
+      </div>
+
+      <div id="loading-stage" class="stage is-hidden">
+        <div class="skeleton-card">
+          <div class="skeleton-parcel shimmer"></div>
+          <div class="skeleton-line shimmer" style="width:70%"></div>
+          <div class="skeleton-line shimmer" style="width:45%"></div>
+        </div>
+        <p class="loading-caption" id="loading-caption">Combing the stacks…</p>
+      </div>
+
+      <div id="teaser-stage" class="stage is-hidden">
+        <div class="teaser-topbar">
+          <p class="stage-eyebrow">Your date has arrived</p>
+          <button class="link-btn" id="change-mood-btn" type="button">change mood</button>
+        </div>
+        <div class="parcel-wrap" id="parcel-wrap">
+
+          <div class="reveal-card" id="reveal-card">
+            <div class="reveal-cover-frame">
+              <img id="reveal-cover" class="reveal-cover" alt="" />
+              <div class="reveal-cover-fallback" id="reveal-cover-fallback">📖</div>
+            </div>
+            <p class="reveal-eyebrow">Tonight you read</p>
+            <h3 class="reveal-title" id="reveal-title">—</h3>
+            <p class="reveal-author" id="reveal-author">—</p>
+            <p class="reveal-year" id="reveal-year"></p>
+            <div class="reveal-actions">
+              <button class="btn btn-ghost" id="save-btn" type="button">
+                <span class="icon">＋</span> Add to TBR pile
+              </button>
+              <button class="btn btn-ghost icon-btn" id="share-btn" type="button" aria-label="Share this book">
+                <span class="icon">⤴</span>
+              </button>
+            </div>
+            <button class="btn btn-text" id="again-btn" type="button">Set me up again ↺</button>
+          </div>
+
+          <div class="parcel-front" id="parcel-front">
+            <div class="parcel-half parcel-left"></div>
+            <div class="parcel-half parcel-right"></div>
+            <div class="parcel-seal">?</div>
+            <div class="parcel-body">
+              <p class="parcel-eyebrow">A stranger, whispering</p>
+              <p class="parcel-hint" id="parcel-hint">Loading a hint…</p>
+              <div class="keyword-row" id="keyword-row"></div>
+              <p class="parcel-tap-hint">tap to unwrap</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <div id="error-stage" class="stage is-hidden">
+        <p class="error-text" id="error-text">This date fell through. The stacks are quiet right now.</p>
+        <button class="btn btn-primary" id="retry-btn" type="button">Try again</button>
+      </div>
+
+    </section>
+
+    <!-- TBR / ABOUT PANEL -->
+    <section id="panel-pile" class="panel" role="tabpanel" aria-labelledby="tab-pile" hidden>
+
+      <div class="pile-section">
+        <h2 class="section-title">Your TBR pile</h2>
+        <p class="section-sub" id="pile-empty-copy">Books you've unwrapped and kept land here.</p>
+        <div class="pile-grid" id="pile-grid"></div>
+      </div>
+
+      <div class="about-section">
+        <h2 class="section-title">About this bookshop</h2>
+        <p class="about-copy">
+          Blind Date with a Book is a small act of rebellion against the algorithm. No star ratings, no "readers also bought," no cover art doing the deciding for you. Just the feeling of pulling a wrapped paperback off a table at your favourite independent bookstore — mood written on a sticky note, title hidden until you're home.
+        </p>
+        <p class="about-copy">
+          Every match is pulled live from the Open Library catalogue. Some dates are perfect. Some are a little strange. That's the whole point — the joy of not knowing is the joy of reading.
+        </p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <footer class="app-footer">
+    <span class="footer-text">Built by Suva</span>
+    <a class="footer-feedback" id="feedback-link" href="#" aria-label="Send feedback">
+      <span class="icon">✉</span> Feedback
+    </a>
+  </footer>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
