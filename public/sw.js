@@ -2,7 +2,7 @@
 // home screen. Book data/covers always go to the network (they need to
 // be fresh), only the static shell is cached.
 
-const CACHE_NAME = "bdwb-shell-v1";
+const CACHE_NAME = "bdwb-shell-v2";
 const SHELL_FILES = [
   "/",
   "/index.html",

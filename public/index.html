@@ -96,44 +96,22 @@
 
       <div id="teaser-stage" class="stage is-hidden">
         <div class="teaser-topbar">
-          <p class="stage-eyebrow">Your date has arrived</p>
+          <p class="stage-eyebrow" id="teaser-eyebrow">Your dates have arrived</p>
           <button class="link-btn" id="change-mood-btn" type="button">change mood</button>
         </div>
-        <div class="parcel-wrap" id="parcel-wrap">
 
-          <div class="reveal-card" id="reveal-card">
-            <div class="reveal-cover-frame">
-              <img id="reveal-cover" class="reveal-cover" alt="" />
-              <div class="reveal-cover-fallback" id="reveal-cover-fallback">📖</div>
-            </div>
-            <p class="reveal-eyebrow">Tonight you read</p>
-            <h3 class="reveal-title" id="reveal-title">—</h3>
-            <p class="reveal-author" id="reveal-author">—</p>
-            <p class="reveal-year" id="reveal-year"></p>
-            <div class="reveal-actions">
-              <button class="btn btn-ghost" id="save-btn" type="button">
-                <span class="icon">＋</span> Add to TBR pile
-              </button>
-              <button class="btn btn-ghost icon-btn" id="share-btn" type="button" aria-label="Share this book">
-                <span class="icon">⤴</span>
-              </button>
-            </div>
-            <button class="btn btn-text" id="again-btn" type="button">Set me up again ↺</button>
-          </div>
-
-          <div class="parcel-front" id="parcel-front">
-            <div class="parcel-half parcel-left"></div>
-            <div class="parcel-half parcel-right"></div>
-            <div class="parcel-seal">?</div>
-            <div class="parcel-body">
-              <p class="parcel-eyebrow">A stranger, whispering</p>
-              <p class="parcel-hint" id="parcel-hint">Loading a hint…</p>
-              <div class="keyword-row" id="keyword-row"></div>
-              <p class="parcel-tap-hint">tap to unwrap</p>
-            </div>
-          </div>
-
+        <div class="carousel" id="carousel">
+          <div class="carousel-track" id="carousel-track"></div>
         </div>
+
+        <div class="carousel-nav">
+          <button class="nav-arrow" id="prev-btn" type="button" aria-label="Previous date">‹</button>
+          <div class="dots" id="dots" role="tablist" aria-label="Your dates"></div>
+          <button class="nav-arrow" id="next-btn" type="button" aria-label="Next date">›</button>
+        </div>
+        <p class="swipe-hint" id="swipe-hint">Swipe to meet your other dates</p>
+
+        <button class="btn btn-text again-all" id="again-btn" type="button">Set me up with new dates ↺</button>
       </div>
 
       <div id="error-stage" class="stage is-hidden">
