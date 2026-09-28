@@ -450,6 +450,7 @@ a { color: inherit; }
 }
 
 .parcel-right {
+  left: auto;
   right: 0;
   border-radius: 0 var(--radius-lg) var(--radius-lg) 0;
   clip-path: polygon(12% 8%, 0 16%, 16% 24%, 0 33%, 10% 42%, 0 52%, 15% 61%, 0 70%, 12% 79%, 0 88%, 8% 100%, 100% 100%, 100% 0, 0 0);
@@ -562,9 +563,11 @@ a { color: inherit; }
   opacity: 1;
   transform: scale(1) translateY(0);
 }
-.reveal-title, .reveal-author, .reveal-year, .reveal-actions, .reveal-eyebrow, .parcel-tap-hint {
+.reveal-title, .reveal-author, .reveal-year, .reveal-actions, .reveal-eyebrow, .parcel-tap-hint, #again-btn {
   opacity: 0;
 }
+.parcel-wrap:not(.is-revealed) #again-btn { visibility: hidden; }
+.parcel-wrap.is-revealed #again-btn { opacity: 1; transition: opacity 0.5s ease 0.7s; }
 .parcel-wrap.is-revealed .reveal-title,
 .parcel-wrap.is-revealed .reveal-author,
 .parcel-wrap.is-revealed .reveal-year,
