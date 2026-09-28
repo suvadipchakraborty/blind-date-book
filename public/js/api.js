@@ -163,25 +163,42 @@ function normalize(doc, selection) {
   };
 }
 
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
 /**
- * Find a random matching book. Tries increasingly broad queries until
- * one returns a usable result (has a cover + title + author).
+ * Find up to `count` distinct random matching books. Tries increasingly
+ * broad queries until enough usable results (cover + title + author) are
+ * collected, topping up from broader searches if a narrow one runs short.
  */
-export async function findBlindDate(selection) {
+export async function findBlindDates(selection, count = 5) {
   const attempts = buildAttempts(selection);
+  const picked = [];
+  const seenKeys = new Set();
+  const seenTitles = new Set();
 
   for (const attempt of attempts) {
     try {
-      const docs = await fetchAttempt(attempt);
-      if (docs.length > 0) {
-        const chosen = docs[Math.floor(Math.random() * docs.length)];
-        return normalize(chosen, selection);
+      const docs = shuffle(await fetchAttempt(attempt));
+      for (const doc of docs) {
+        const titleKey = doc.title.toLowerCase().trim();
+        if (seenKeys.has(doc.key) || seenTitles.has(titleKey)) continue;
+        seenKeys.add(doc.key);
+        seenTitles.add(titleKey);
+        picked.push(normalize(doc, selection));
+        if (picked.length >= count) return picked;
       }
     } catch (err) {
-      // try the next, broader attempt
       continue;
     }
   }
 
-  throw new Error("No matches found in the stacks tonight.");
+  if (picked.length === 0) throw new Error("No matches found in the stacks tonight.");
+  return picked;
 }

@@ -1,6 +1,6 @@
 // app.js — main controller: tabs, picker, teaser/reveal flow, pile, sharing
 import { MOODS, DECADES, GENRES, LOADING_CAPTIONS } from "./data.js";
-import { findBlindDate } from "./api.js";
+import { findBlindDates } from "./api.js";
 import { getPile, addToPile, removeFromPile, isInPile } from "./storage.js";
 
 const APP_URL = "https://blind-date-book.suvadipchakraborty.workers.dev/";
@@ -8,8 +8,12 @@ const FEEDBACK_EMAIL = "suvadipchakraborty@gmail.com";
 
 const state = {
   selection: { mood: null, decade: null, genre: null },
-  currentBook: null,
+  books: [],
+  current: 0,
+  revealed: new Set(),
 };
+
+const MAX_DATES = 5;
 
 // ---------- element refs ----------
 const el = {
@@ -31,17 +35,12 @@ const el = {
   errorText: document.getElementById("error-text"),
   retryBtn: document.getElementById("retry-btn"),
 
-  parcelWrap: document.getElementById("parcel-wrap"),
-  parcelFront: document.getElementById("parcel-front"),
-  parcelHint: document.getElementById("parcel-hint"),
-  keywordRow: document.getElementById("keyword-row"),
-
-  revealCover: document.getElementById("reveal-cover"),
-  revealTitle: document.getElementById("reveal-title"),
-  revealAuthor: document.getElementById("reveal-author"),
-  revealYear: document.getElementById("reveal-year"),
-  saveBtn: document.getElementById("save-btn"),
-  shareBtn: document.getElementById("share-btn"),
+  track: document.getElementById("carousel-track"),
+  dots: document.getElementById("dots"),
+  prevBtn: document.getElementById("prev-btn"),
+  nextBtn: document.getElementById("next-btn"),
+  swipeHint: document.getElementById("swipe-hint"),
+  eyebrow: document.getElementById("teaser-eyebrow"),
   againBtn: document.getElementById("again-btn"),
   changeMoodBtn: document.getElementById("change-mood-btn"),
 
@@ -88,6 +87,13 @@ function activateTab(tab) {
   el.panelHome.hidden = !isHome;
   el.panelPile.hidden = isHome;
   if (!isHome) renderPile();
+  else {
+    // keep "Add to TBR pile" buttons in sync if the pile changed elsewhere
+    [...el.track.children].forEach((slide, i) => {
+      const btn = slide.querySelector(".save-btn");
+      if (btn && state.books[i]) updateSaveButton(btn, state.books[i]);
+    });
+  }
 }
 
 el.tabHome.addEventListener("click", () => activateTab("home"));
@@ -127,11 +133,14 @@ async function goOnADate() {
   startLoadingCaptions();
 
   try {
-    const book = await findBlindDate(state.selection);
-    state.currentBook = book;
-    populateTeaser(book);
-    resetParcel();
+    const books = await findBlindDates(state.selection, MAX_DATES);
+    state.books = books;
+    state.current = 0;
+    state.revealed = new Set();
+    renderCarousel();
     showStage("teaser");
+    el.track.scrollLeft = 0;
+    updateCarouselUI();
   } catch (err) {
     el.errorText.textContent =
       "This date fell through. The stacks are quiet for that combination right now — try loosening your picks.";
@@ -141,58 +150,163 @@ async function goOnADate() {
   }
 }
 
-function populateTeaser(book) {
-  el.parcelHint.textContent = book.hint;
-  el.keywordRow.innerHTML = "";
-  book.keywords.forEach((kw) => {
-    const span = document.createElement("span");
-    span.className = "keyword-chip";
-    span.textContent = kw;
-    el.keywordRow.appendChild(span);
+// ---------- carousel ----------
+function renderCarousel() {
+  el.track.innerHTML = "";
+  el.dots.innerHTML = "";
+  const total = state.books.length;
+
+  el.eyebrow.textContent = total > 1 ? `${total} dates have arrived` : "Your date has arrived";
+  el.swipeHint.style.display = total > 1 ? "block" : "none";
+  el.prevBtn.style.visibility = el.nextBtn.style.visibility = total > 1 ? "visible" : "hidden";
+
+  state.books.forEach((book, i) => {
+    const slide = document.createElement("div");
+    slide.className = "slide";
+    slide.dataset.index = i;
+    slide.innerHTML = `
+      <p class="slide-count">Date ${i + 1} of ${total}</p>
+      <div class="parcel-wrap">
+        <div class="reveal-card">
+          <div class="reveal-cover-frame">
+            <img class="reveal-cover" alt="" />
+            <div class="reveal-cover-fallback">📖</div>
+          </div>
+          <p class="reveal-eyebrow">Tonight you read</p>
+          <h3 class="reveal-title"></h3>
+          <p class="reveal-author"></p>
+          <p class="reveal-year"></p>
+          <div class="reveal-actions">
+            <button class="btn btn-ghost save-btn" type="button"></button>
+            <button class="btn btn-ghost icon-btn share-btn" type="button" aria-label="Share this book">
+              <span class="icon">⤴</span>
+            </button>
+          </div>
+        </div>
+        <div class="parcel-front" tabindex="0" role="button" aria-label="Tap to unwrap your blind date book">
+          <div class="parcel-half parcel-left"></div>
+          <div class="parcel-half parcel-right"></div>
+          <div class="parcel-seal">?</div>
+          <div class="parcel-body">
+            <p class="parcel-eyebrow">A stranger, whispering</p>
+            <p class="parcel-hint"></p>
+            <div class="keyword-row"></div>
+            <p class="parcel-tap-hint">tap to unwrap</p>
+          </div>
+        </div>
+      </div>`;
+
+    // fill text safely (textContent, never innerHTML, for API data)
+    slide.querySelector(".parcel-hint").textContent = book.hint;
+    const kwRow = slide.querySelector(".keyword-row");
+    book.keywords.forEach((kw) => {
+      const span = document.createElement("span");
+      span.className = "keyword-chip";
+      span.textContent = kw;
+      kwRow.appendChild(span);
+    });
+    slide.querySelector(".reveal-title").textContent = book.title;
+    slide.querySelector(".reveal-author").textContent = `by ${book.author}`;
+    slide.querySelector(".reveal-year").textContent = book.year ? `First published ${book.year}` : "";
+
+    const img = slide.querySelector(".reveal-cover");
+    if (book.coverUrl) {
+      img.alt = `Cover of ${book.title}`;
+      img.onload = () => img.classList.add("is-loaded");
+      img.src = book.coverUrl;
+    }
+
+    const wrap = slide.querySelector(".parcel-wrap");
+    const front = slide.querySelector(".parcel-front");
+    const unwrapIt = () => unwrap(i, wrap, front);
+    front.addEventListener("click", unwrapIt);
+    front.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        unwrapIt();
+      }
+    });
+
+    const saveBtn = slide.querySelector(".save-btn");
+    updateSaveButton(saveBtn, book);
+    saveBtn.addEventListener("click", () => {
+      addToPile(book);
+      updateSaveButton(saveBtn, book);
+      showToast("Added to your TBR pile 📚");
+    });
+    slide.querySelector(".share-btn").addEventListener("click", () => shareBook(book));
+
+    el.track.appendChild(slide);
+
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = "dot";
+    dot.setAttribute("aria-label", `Go to date ${i + 1}`);
+    dot.addEventListener("click", () => goToSlide(i));
+    el.dots.appendChild(dot);
   });
-
-  el.revealTitle.textContent = book.title;
-  el.revealAuthor.textContent = `by ${book.author}`;
-  el.revealYear.textContent = book.year ? `First published ${book.year}` : "";
-
-  el.revealCover.classList.remove("is-loaded");
-  if (book.coverUrl) {
-    el.revealCover.src = book.coverUrl;
-    el.revealCover.alt = `Cover of ${book.title}`;
-    el.revealCover.onload = () => el.revealCover.classList.add("is-loaded");
-    el.revealCover.onerror = () => el.revealCover.classList.remove("is-loaded");
-  } else {
-    el.revealCover.removeAttribute("src");
-  }
-
-  updateSaveButton();
 }
 
-function resetParcel() {
-  el.parcelFront.classList.remove("is-torn");
-  el.parcelWrap.classList.remove("is-revealed");
-  // force reflow so re-triggering the animation works on repeat dates
-  void el.parcelFront.offsetWidth;
-  el.parcelFront.style.display = "flex";
-}
-
-function unwrap() {
-  if (el.parcelFront.classList.contains("is-torn")) return;
-  el.parcelFront.classList.add("is-torn");
-  el.parcelWrap.classList.add("is-revealed");
+function unwrap(index, wrap, front) {
+  if (front.classList.contains("is-torn")) return;
+  front.classList.add("is-torn");
+  wrap.classList.add("is-revealed");
+  state.revealed.add(index);
+  updateCarouselUI();
   if (navigator.vibrate) navigator.vibrate([14, 40, 14]);
 }
 
-el.parcelFront.addEventListener("click", unwrap);
-el.parcelFront.addEventListener("keydown", (e) => {
-  if (e.key === "Enter" || e.key === " ") {
-    e.preventDefault();
-    unwrap();
-  }
-});
-el.parcelFront.setAttribute("tabindex", "0");
-el.parcelFront.setAttribute("role", "button");
-el.parcelFront.setAttribute("aria-label", "Tap to unwrap your blind date book");
+function goToSlide(i) {
+  const slide = el.track.children[i];
+  if (!slide) return;
+  const left = slide.offsetLeft - (el.track.clientWidth - slide.clientWidth) / 2;
+  el.track.scrollTo({ left, behavior: "smooth" });
+}
+
+function currentIndexFromScroll() {
+  const center = el.track.scrollLeft + el.track.clientWidth / 2;
+  let best = 0;
+  let bestDist = Infinity;
+  [...el.track.children].forEach((slide, i) => {
+    const dist = Math.abs(slide.offsetLeft + slide.clientWidth / 2 - center);
+    if (dist < bestDist) {
+      bestDist = dist;
+      best = i;
+    }
+  });
+  return best;
+}
+
+function updateCarouselUI() {
+  const total = state.books.length;
+  [...el.track.children].forEach((slide, i) =>
+    slide.classList.toggle("is-current", i === state.current)
+  );
+  [...el.dots.children].forEach((dot, i) => {
+    dot.classList.toggle("is-current", i === state.current);
+    dot.classList.toggle("is-revealed", state.revealed.has(i));
+  });
+  el.prevBtn.disabled = state.current <= 0;
+  el.nextBtn.disabled = state.current >= total - 1;
+}
+
+let scrollRaf = null;
+el.track.addEventListener("scroll", () => {
+  if (scrollRaf) return;
+  scrollRaf = requestAnimationFrame(() => {
+    scrollRaf = null;
+    const idx = currentIndexFromScroll();
+    if (idx !== state.current) {
+      state.current = idx;
+      updateCarouselUI();
+    }
+  });
+}, { passive: true });
+
+el.prevBtn.addEventListener("click", () => goToSlide(Math.max(0, state.current - 1)));
+el.nextBtn.addEventListener("click", () =>
+  goToSlide(Math.min(state.books.length - 1, state.current + 1))
+);
 
 el.findBtn.addEventListener("click", goOnADate);
 el.retryBtn.addEventListener("click", goOnADate);
@@ -200,25 +314,15 @@ el.againBtn.addEventListener("click", goOnADate);
 el.changeMoodBtn.addEventListener("click", () => showStage("picker"));
 
 // ---------- save to pile ----------
-function updateSaveButton() {
-  if (!state.currentBook) return;
-  const saved = isInPile(state.currentBook.key);
-  el.saveBtn.innerHTML = saved
+function updateSaveButton(btn, book) {
+  const saved = isInPile(book.key);
+  btn.innerHTML = saved
     ? `<span class="icon">✓</span> In your TBR pile`
     : `<span class="icon">＋</span> Add to TBR pile`;
 }
 
-el.saveBtn.addEventListener("click", () => {
-  if (!state.currentBook) return;
-  addToPile(state.currentBook);
-  updateSaveButton();
-  showToast("Added to your TBR pile 📚");
-});
-
 // ---------- share ----------
-el.shareBtn.addEventListener("click", async () => {
-  const book = state.currentBook;
-  if (!book) return;
+async function shareBook(book) {
   const text = `I just went on a blind date with "${book.title}" by ${book.author} 📚✨`;
   if (navigator.share) {
     try {
@@ -230,7 +334,7 @@ el.shareBtn.addEventListener("click", async () => {
     const waUrl = `https://wa.me/?text=${encodeURIComponent(`${text} ${APP_URL}`)}`;
     window.open(waUrl, "_blank", "noopener");
   }
-});
+}
 
 // ---------- feedback mailto ----------
 el.feedbackLink.href = `mailto:${FEEDBACK_EMAIL}?subject=${encodeURIComponent(
@@ -254,7 +358,6 @@ function renderPile() {
     card.querySelector(".pile-remove").addEventListener("click", () => {
       removeFromPile(book.key);
       renderPile();
-      if (state.currentBook && state.currentBook.key === book.key) updateSaveButton();
     });
     el.pileGrid.appendChild(card);
   });
