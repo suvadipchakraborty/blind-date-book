@@ -350,6 +350,11 @@ a { color: inherit; }
 
 /* the revealed card sits underneath the wrap */
 .reveal-card {
+  min-height: 440px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   background: #fff;
   border-radius: var(--radius-lg);
   padding: 26px 22px 22px;
@@ -415,6 +420,7 @@ a { color: inherit; }
 }
 
 .reveal-actions {
+  width: 100%;
   display: flex;
   gap: 8px;
   margin-top: 20px;
@@ -563,11 +569,10 @@ a { color: inherit; }
   opacity: 1;
   transform: scale(1) translateY(0);
 }
-.reveal-title, .reveal-author, .reveal-year, .reveal-actions, .reveal-eyebrow, .parcel-tap-hint, #again-btn {
+.reveal-title, .reveal-author, .reveal-year, .reveal-actions, .reveal-eyebrow, .parcel-tap-hint {
   opacity: 0;
 }
-.parcel-wrap:not(.is-revealed) #again-btn { visibility: hidden; }
-.parcel-wrap.is-revealed #again-btn { opacity: 1; transition: opacity 0.5s ease 0.7s; }
+
 .parcel-wrap.is-revealed .reveal-title,
 .parcel-wrap.is-revealed .reveal-author,
 .parcel-wrap.is-revealed .reveal-year,
@@ -741,3 +746,85 @@ button:focus-visible {
   .app-main { padding: 18px 16px 24px; }
   .stage-intro { font-size: 17.5px; }
 }
+
+
+/* ---------- carousel (swipe up to 5 dates) ---------- */
+.carousel { margin: 0 -20px; }
+
+.carousel-track {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 6px 7% 24px;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.carousel-track::-webkit-scrollbar { display: none; }
+
+.slide {
+  flex: 0 0 86%;
+  scroll-snap-align: center;
+  scroll-snap-stop: always;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.slide:not(.is-current) { opacity: 0.6; transform: scale(0.96); }
+
+.slide-count {
+  text-align: center;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  margin: 0 0 8px;
+}
+
+.carousel-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: -6px;
+}
+
+.nav-arrow {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: rgba(255,255,255,0.5);
+  color: var(--ink);
+  font-size: 20px;
+  line-height: 1;
+  cursor: pointer;
+  padding: 0 0 3px;
+}
+.nav-arrow:disabled { opacity: 0.3; cursor: default; }
+
+.dots { display: flex; gap: 9px; align-items: center; }
+
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: var(--parchment-dim);
+  box-shadow: inset 0 0 0 1.5px var(--kraft-dark);
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+.dot.is-revealed { background: var(--brass); box-shadow: none; }
+.dot.is-current { transform: scale(1.5); background: var(--wine); box-shadow: none; }
+
+.swipe-hint {
+  text-align: center;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 13.5px;
+  color: var(--ink-soft);
+  margin: 12px 0 0;
+}
+
+.again-all { display: block; margin: 8px auto 0; }
