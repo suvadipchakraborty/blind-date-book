@@ -1,8 +1,8 @@
 # Blind Date with a Book 📚
 
 An anti-algorithm "serendipity engine" for book discovery. Pick a mood, an
-era, and a genre nudge — get back a wrapped parcel with only a cryptic hint
-and three keywords. Tap to tear it open and meet your match.
+era, and a genre nudge — get back up to five wrapped parcels, each with only a cryptic hint
+and three keywords. Swipe through them, tap one to tear it open, and meet your match.
 
 No accounts, no tracking, no recommendation engine. Just live data from the
 free [Open Library API](https://openlibrary.org/developers/api).
